@@ -233,7 +233,7 @@ component =
                    in Just $ AgendaItem (ai { speakerQueues = x.speakerQueues })) ag)))
 
             newAI { id, supertitle, title, order_, state } =
-              AgendaItem {id, supertitle, title, order_, state, speakerQueues: mempty }
+              AgendaItem { id, supertitle, title, order_, state, speakerQueues: mempty }
 
         handleAttendee :: F Attendee -> State -> F State
         handleAttendee fr state =

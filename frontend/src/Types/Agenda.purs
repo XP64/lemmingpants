@@ -27,7 +27,7 @@ import Data.Maybe (Maybe(Just, Nothing), fromMaybe)
 import Data.Newtype (class Newtype)
 import Data.Record as R
 import Data.Record.ShowRecord (showRecord)
-import Prelude (class Eq, class Ord, class Show, compare, eq, (+), (-), (/=), (<), (<#>), (<<<), (<>), (==), (>=), (>>=), (>>>))
+import Prelude (class Eq, class Ord, class Show, compare, eq, (+), (-), (/=), (<), (<#>), (<$>), (<<<), (<>), (==), (>=), (>>=), (>>>))
 import Simple.JSON (class ReadForeign, readImpl)
 import Type.Prelude (SProxy(..))
 
@@ -63,7 +63,7 @@ instance rfAI :: ReadForeign AgendaItem where
             (L.sort <<< (L.fromFoldable :: Array SpeakerQueue -> L.List SpeakerQueue))
       >>> AgendaItem
 
--- The top of the speaker queue stack
+-- | The top of the speaker queue stack
 topSQ :: AgendaItem -> Maybe SpeakerQueue
 topSQ (AgendaItem a) = L.head a.speakerQueues
 
@@ -82,7 +82,7 @@ popSQIfMatchingId id (AgendaItem ai) =
 
 -- | We try to modify the speaker queue with the supplied id.
 -- | If the speaker queue isn't found, we give back Nothing.
--- | And if you give us Nothing, we pass it on.
+-- | And if you give us Nothing in the callback, we pass it on.
 modifySQ :: Int -> (SpeakerQueue -> Maybe SpeakerQueue) -> AgendaItem -> Maybe AgendaItem
 modifySQ i f (AgendaItem ai) =
   let {init, rest} = L.span (\(SpeakerQueue s) -> s.id /= i) ai.speakerQueues
@@ -98,9 +98,9 @@ modifySQ i f (AgendaItem ai) =
 data Agenda = Agenda Int (Array AgendaItem)
 
 instance rfAg :: ReadForeign Agenda where
-  readImpl fr =
-    readImpl fr
-      <#> Agenda 0
+  readImpl fr = Agenda 0 <$> readImpl fr
+
+-- instance
 
 -- | How to get insight into the agenda.
 _AgendaItems :: Lens' Agenda (Array AgendaItem)
@@ -130,7 +130,7 @@ insert a (Agenda i as) = Agenda i (A.insert a as)
 
 -- | We try to modify the agenda item with the same id.
 -- | If the agenda item isn't found, we give back Nothing.
--- | If you change your mind, just return Nothing in the higher order
+-- | If you change your mind, just return Nothing in the callback
 -- | function and we forget that it all happened.
 modify :: Int -> (AgendaItem -> Maybe AgendaItem) -> Agenda -> Maybe Agenda
 modify aid f (Agenda c as) =
@@ -151,4 +151,3 @@ jumpToFirstActive (Agenda _ as) = Agenda i as
 getCurrentAI :: Agenda -> Either String AgendaItem
 getCurrentAI =
   note "ERROR: There is no current agenda item." <<< curr
-
