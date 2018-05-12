@@ -14,6 +14,8 @@ import Data.Either.Nested (Either5)
 import Data.Foldable (foldMap)
 import Data.Foreign (F, Foreign, ForeignError(..), fail, renderForeignError)
 import Data.Functor.Coproduct.Nested (Coproduct5)
+import Data.Lens (findOf, traverseOf)
+import Data.Lens.Index (ix)
 import Data.Maybe (Maybe(Nothing, Just), fromMaybe, maybe)
 import Data.Monoid (mempty)
 import Data.String (toLower)
@@ -23,11 +25,11 @@ import Halogen.Component.ChildPath as CP
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
 import Halogen.HTML.Properties as HP
-import Prelude (class Show, type (~>), Unit, Void, const, pure, show, unit, ($), (*>), (<#>), (<$), (<>), (=<<), (==), (>>=))
+import Prelude (class Show, type (~>), Unit, Void, const, pure, show, unit, ($), (*>), (<#>), (<$), (<<<), (<>), (=<<), (==), (>>=))
 import Routing.Match (Match)
 import Routing.Match.Class (lit)
 import Simple.JSON (readImpl, readJSON')
-import Types.Agenda (Agenda, AgendaItem(AgendaItem))
+import Types.Agenda (Agenda, AgendaItem(AgendaItem), _AgendaItems)
 import Types.Agenda as AG
 import Types.Attendee (Attendee, AttendeeDB, insertAttendee)
 import Types.Flash as FL
@@ -254,14 +256,16 @@ component =
           fr >>= \r ->
             except (note
               (pure (ForeignError ("Modifying the speaker failed.")))
-              (AG.modify
+              (traverseOf
+                (_AgendaItems <<< filtered ())
+              AG.modify
                 r.agenda_item_id
-                (AG.modifySQ r.speaker_queue_id (go action r))
+                (AG.modifySQ r.speaker_queue_id (Just <<< go action r))
                 st.agenda)
               <#> \a' -> st { agenda = a' })
           where
-            go Insert r sq = Just $ addSpeaker (newSpeaker r) sq
-            go Update r sq = Just $ modifySpeaker r.id (const $ newSpeaker r) sq
+            go Insert r = addSpeaker (newSpeaker r)
+            go Update r = modifySpeaker r.id (const $ newSpeaker r)
 
             newSpeaker {id, attendee_id, state, times_spoken} =
               let ts = fromMaybe 0 times_spoken
@@ -282,7 +286,7 @@ component =
             (AG.modify agenda_item_id (go action {id, state}) s.agenda
               <#> \a' -> s { agenda = a' }))
           where
-            go Insert {id, state} ai = Just (AG.pushSQ (SpeakerQueue {id, state, speaking: Nothing, speakers: []}) ai)
+            go Insert {id, state} ai = Just $ AG.pushSQ (SpeakerQueue {id, state, speaking: Nothing, speakers: []}) ai
             go Update {id, state} ai =
               if state == "done"
                 then AG.popSQIfMatchingId id ai

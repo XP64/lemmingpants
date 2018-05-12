@@ -1,6 +1,9 @@
 module Types.Agenda
   ( AgendaItem(..)
   , Agenda
+  , _AgendaItems
+  , _CurrentAgendaItem
+  , _SpeakerQueues
   , topSQ
   , pushSQ
   , popSQIfMatchingId
