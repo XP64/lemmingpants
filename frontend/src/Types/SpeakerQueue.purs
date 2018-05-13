@@ -9,13 +9,14 @@ module Types.SpeakerQueue
 
 import Control.Alt ((<|>))
 import Data.Array as A
-import Data.Lens (Lens', _Just, filtered, lens, over, preview, prism', to, traverseOf, view)
-import Data.Lens.Index (ix)
+import Data.Foldable (class Foldable)
+import Data.Lens (Lens', _Just, filtered, lens, over, preview, traverseOf)
 import Data.Maybe (Maybe(Nothing, Just), fromMaybe)
 import Data.Newtype (class Newtype)
 import Data.Record.ShowRecord (showRecord)
-import Prelude (class Eq, class Ord, class Show, compare, id, pure, ($), (&&), (/=), (<#>), (<<<), (<>), (==), (>>=), (>>>))
+import Prelude (class Applicative, class Eq, class Ord, class Show, compare, id, pure, ($), (&&), (/=), (<#>), (<<<), (<>), (==), (>>=), (>>>))
 import Simple.JSON (class ReadForeign, readImpl)
+import Types.Lens (_withId)
 import Types.Speaker (Speaker(..))
 
 type SpeakerQueueRecord =
@@ -74,11 +75,15 @@ addSpeaker s = over _Speakers (A.insert s)
 
 -- | Modify the speaker with the id that is the first argument of this function.
 -- | Do nothing if the speaker isn't found.
+-- TODO: We should really be able to refactor this.
 modifySpeaker :: Int -> (Speaker -> Speaker) -> SpeakerQueue -> SpeakerQueue
-modifySpeaker id_ f sq = fromMaybe sq
-    $   traverseOf (_Speaking <<< _Just <<< prism' (\s -> s) (maybeEqId id_)) (pure <<< f) sq
-    <|> (view (_Speakers <<< to (A.findIndex (\(Speaker s) -> s.id == id_))) sq <#> \idx -> over (_Speakers <<< ix idx) f sq)
+modifySpeaker id_ f sq = fromMaybe sq $ go _Speaking sq <|> go _Speakers sq
   where
-    maybeEqId :: Int -> Speaker -> Maybe Speaker
-    maybeEqId id' s@(Speaker {id}) | id == id' = Just s
-                                   | true      = Nothing
+    go
+      :: forall f
+       . Applicative f
+      => Foldable f
+      => Lens' SpeakerQueue (f Speaker)
+      -> SpeakerQueue
+      -> Maybe SpeakerQueue
+    go _l = traverseOf (_l <<< _withId id_) (pure <<< f)

@@ -14,8 +14,6 @@ import Data.Either.Nested (Either5)
 import Data.Foldable (foldMap)
 import Data.Foreign (F, Foreign, ForeignError(..), fail, renderForeignError)
 import Data.Functor.Coproduct.Nested (Coproduct5)
-import Data.Lens (findOf, traverseOf)
-import Data.Lens.Index (ix)
 import Data.Maybe (Maybe(Nothing, Just), fromMaybe, maybe)
 import Data.Monoid (mempty)
 import Data.String (toLower)
@@ -29,7 +27,7 @@ import Prelude (class Show, type (~>), Unit, Void, const, pure, show, unit, ($),
 import Routing.Match (Match)
 import Routing.Match.Class (lit)
 import Simple.JSON (readImpl, readJSON')
-import Types.Agenda (Agenda, AgendaItem(AgendaItem), _AgendaItems)
+import Types.Agenda (Agenda, AgendaItem(AgendaItem))
 import Types.Agenda as AG
 import Types.Attendee (Attendee, AttendeeDB, insertAttendee)
 import Types.Flash as FL
@@ -256,13 +254,11 @@ component =
           fr >>= \r ->
             except (note
               (pure (ForeignError ("Modifying the speaker failed.")))
-              (traverseOf
-                (_AgendaItems <<< filtered ())
-              AG.modify
+              (AG.modify
                 r.agenda_item_id
                 (AG.modifySQ r.speaker_queue_id (Just <<< go action r))
-                st.agenda)
-              <#> \a' -> st { agenda = a' })
+                st.agenda))
+            <#> \a' -> st { agenda = a' }
           where
             go Insert r = addSpeaker (newSpeaker r)
             go Update r = modifySpeaker r.id (const $ newSpeaker r)
