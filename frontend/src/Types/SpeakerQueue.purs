@@ -20,6 +20,11 @@ import Simple.JSON (class ReadForeign, readImpl)
 import Types.Lens (_withId)
 import Types.Speaker (Speaker(..))
 
+data SpeakerQueueState
+  = Init
+  | Active
+  | Done
+
 type SpeakerQueueRecord =
   { id       :: Int
   , state    :: String
@@ -64,6 +69,7 @@ _Speakers =
     (\(SpeakerQueue r) s' -> SpeakerQueue (moveActive (r { speakers = s' })))
 
   where
+    moveActive :: SpeakerQueueRecord -> SpeakerQueueRecord
     moveActive sq =
       fromMaybe sq $ A.uncons (A.filter (\(Speaker s) -> s.state /= "done" && s.state /= "deleted") sq.speakers)
         >>= \{head, tail} ->
