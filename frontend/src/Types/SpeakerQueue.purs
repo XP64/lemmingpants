@@ -10,6 +10,7 @@ module Types.SpeakerQueue
 import Control.Alt ((<|>))
 import Data.Array as A
 import Data.Foldable (class Foldable)
+import Data.Generic.Rep (class Generic)
 import Data.Lens (Lens', _Just, filtered, lens, over, preview, traverseOf)
 import Data.Maybe (Maybe(Nothing, Just), fromMaybe)
 import Data.Newtype (class Newtype)
@@ -26,8 +27,9 @@ type SpeakerQueueRecord =
   , speakers :: Array Speaker
   }
 newtype SpeakerQueue = SpeakerQueue SpeakerQueueRecord
-derive instance ntSQ :: Newtype SpeakerQueue _
-derive instance eqSQ :: Eq      SpeakerQueue
+derive instance ntSQ  :: Newtype SpeakerQueue _
+derive instance eqSQ  :: Eq      SpeakerQueue
+derive instance genSQ :: Generic SpeakerQueue _
 
 instance shSQ :: Show SpeakerQueue where
   show (SpeakerQueue sq) = "SpeakerQueue " <> showRecord sq

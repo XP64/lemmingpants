@@ -3,11 +3,14 @@ module Types.Speaker
   , visualizeSpeaker
   ) where
 
+import Data.Generic.Rep (class Generic)
 import Data.Maybe (maybe)
 import Data.Newtype (class Newtype)
 import Data.Record.ShowRecord (showRecord)
 import Prelude (class Eq, class Ord, class Show, compare, (<>))
 import Simple.JSON (class ReadForeign)
+import Test.QuickCheck (class Arbitrary)
+import Test.QuickCheck.Arbitrary (genericArbitrary)
 import Types.Attendee (AttendeeDB, getAttendeeById, visualizeAttendee)
 
 newtype Speaker = Speaker
@@ -16,9 +19,13 @@ newtype Speaker = Speaker
   , state       :: String
   , timesSpoken :: Int
   }
-derive instance         ntSp :: Newtype     Speaker _
-derive newtype instance rfSp :: ReadForeign Speaker
-derive instance         eqSp :: Eq          Speaker
+derive instance         ntSp  :: Newtype     Speaker _
+derive newtype instance rfSp  :: ReadForeign Speaker
+derive instance         eqSp  :: Eq          Speaker
+derive instance         genSQ :: Generic     Speaker _
+
+instance arbSQ :: Arbitrary Speaker where
+  arbitrary = genericArbitrary
 
 instance shSp :: Show Speaker where
   show (Speaker s) = "Speaker " <> showRecord s

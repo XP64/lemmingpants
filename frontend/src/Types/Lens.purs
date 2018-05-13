@@ -5,6 +5,7 @@ import Data.Lens (Prism', prism')
 import Data.Newtype (class Newtype, unwrap)
 import Prelude (class Applicative, pure, (<<<), (==))
 
+-- | Compares equality for a Newtype that has an id with the value of that id.
 _withId
   :: forall f fs n
    . Newtype n { id :: Int | fs }
